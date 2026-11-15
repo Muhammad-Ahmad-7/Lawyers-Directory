@@ -33,7 +33,17 @@ Built with Next.js 15 (App Router), PostgreSQL + Prisma, Auth.js and Tailwind CS
 
 4. Start the app: `npm run dev`, open http://localhost:3000 and choose **Create an account**.
 
-## Production
+## Deploying to Vercel
+
+1. Push the repository to GitHub and import it in Vercel (it detects Next.js; no build settings to change).
+2. In **Project → Settings → Environment Variables** add:
+   - `DATABASE_URL` – your Postgres connection string (e.g. the Neon pooled URL)
+   - `AUTH_SECRET` – a long random string
+   - `APP_TIMEZONE` – e.g. `Asia/Karachi`. Required: Vercel servers run in UTC, so without it times are shown and saved in UTC.
+3. Make sure the database schema is up to date before deploying: `npx prisma migrate deploy` (run locally against the production `DATABASE_URL`).
+4. Deploy. The Prisma client is generated during install (`postinstall` script).
+
+## Production (other hosts)
 
 ```bash
 npm run build
