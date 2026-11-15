@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  events       Event[]
+}
+
+enum EventType {
+  APPOINTMENT
+  COURT_HEARING
+  CLIENT_MEETING
+  DEADLINE
+  OTHER
+}
+
+enum EventStatus {
+  SCHEDULED
+  COMPLETED
+  ADJOURNED
+  CANCELLED
+}
+
+model Event {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  type       EventType   @default(APPOINTMENT)
+  status     EventStatus @default(SCHEDULED)
+  startAt    DateTime
+  endAt      DateTime
+  allDay     Boolean     @default(false)
+  location   String?
+  clientName String?
+  caseNumber String?
+  courtName  String?
+  notes      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([userId, startAt])
+}
