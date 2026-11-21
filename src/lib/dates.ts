@@ -13,17 +13,13 @@ import {
 /** Monday-first weeks. */
 export const WEEK_STARTS_ON = 1 as const;
 
-/** The timezone the lawyer works in. All dates are shown and entered in this zone. */
+/** The timezone the lawyer works in. "Today" and the calendar use this zone. */
 export function appTimeZone(): string {
   return process.env.APP_TIMEZONE || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 }
 
-export function inTz(value: Date | string | number, tz: string): TZDate {
-  return new TZDate(new Date(value).getTime(), tz);
-}
-
 export function nowInTz(tz: string): TZDate {
-  return inTz(Date.now(), tz);
+  return new TZDate(Date.now(), tz);
 }
 
 /** "2026-11" → first day of that month in tz. Falls back to the current month. */
@@ -54,29 +50,52 @@ export function gridDays(monthStart: TZDate): TZDate[] {
   return eachDayOfInterval({ start, end }) as TZDate[];
 }
 
-/** Query range covering the whole grid (exclusive end). */
-export function gridRange(monthStart: TZDate): { from: Date; to: Date } {
-  const days = gridDays(monthStart);
-  return { from: days[0], to: addDays(days[days.length - 1], 1) };
-}
-
+/** "yyyy-MM-dd" of a date, read in the date's own zone. */
 export function dayKey(d: Date): string {
   return format(d, "yyyy-MM-dd");
 }
 
-/** "2026-11-14" + "09:30" in tz → absolute Date. */
-export function wallTimeToDate(date: string, time: string, tz: string): Date | null {
-  const dm = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const tm = time.match(/^(\d{2}):(\d{2})$/);
-  if (!dm || !tm) return null;
-  const d = new TZDate(
-    Number(dm[1]),
-    Number(dm[2]) - 1,
-    Number(dm[3]),
-    Number(tm[1]),
-    Number(tm[2]),
-    tz,
-  );
-  if (Number.isNaN(d.getTime()) || dayKey(d) !== date) return null;
-  return new Date(d.getTime());
+export function todayKey(tz: string): string {
+  return dayKey(nowInTz(tz));
+}
+
+// ---- Date-only values (hearing dates) ---------------------------------------
+// Hearing dates are stored in a Postgres DATE column. Prisma hands them over as
+// a Date at UTC midnight, so they are converted with UTC on both sides and never
+// shift with the server's or browser's timezone.
+
+const KEY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** True for a real calendar date such as "2026-02-28" (rejects "2026-02-30"). */
+export function isValidDateKey(key: string): boolean {
+  const m = key.match(KEY_RE);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.toISOString().slice(0, 10) === key;
+}
+
+/** "2026-11-20" → Date for a DATE column. */
+export function keyToDbDate(key: string): Date {
+  return new Date(`${key}T00:00:00.000Z`);
+}
+
+/** DATE column value → "2026-11-20". */
+export function dbDateToKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export function addDaysToKey(key: string, days: number): string {
+  return dbDateToKey(addDays(keyToDbDate(key), days));
+}
+
+/** Format a "yyyy-MM-dd" key with a date-fns pattern, e.g. "EEE, d MMM yyyy". */
+export function formatKey(key: string, pattern: string): string {
+  const [y, m, d] = key.split("-").map(Number);
+  return format(new Date(y, m - 1, d), pattern);
+}
+
+/** "14:30" → "2:30 PM". */
+export function formatTime(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  return format(new Date(2000, 0, 1, h, m), "h:mm a");
 }

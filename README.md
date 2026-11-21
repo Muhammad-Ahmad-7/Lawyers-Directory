@@ -1,21 +1,24 @@
 # Lawyer Schedule
 
-A private web app where a lawyer signs in and manages their monthly schedule: client appointments, court hearings, client meetings, deadlines and other events.
+A private web app where a lawyer signs in, records their cases and keeps track of each case's hearing dates.
 
 Built with Next.js 15 (App Router), PostgreSQL + Prisma, Auth.js and Tailwind CSS.
 
 ## Features
 
-- Sign up (name, email, password) and sign in; passwords are stored hashed (scrypt) in the database; every page except `/login` and `/signup` requires sign-in
-- Each lawyer only sees and edits their own events
-- Month calendar with previous / next / today navigation and colour-coded event types
-- Add, edit and delete events; court-hearing fields (court, case number) and client fields
-- Event status: scheduled, completed, adjourned, cancelled
-- Day agenda panel and a "next 7 days" list
-- Filter the calendar by event type
-- Warning when a new event overlaps an existing one (you can still save)
-- Print-friendly month view (Print button, landscape)
-- Works on phones (calendar shows dots; tap a day to see its events)
+- Sign up with full name, email, WhatsApp / contact number, username and password; sign in with **username + password** (passwords hashed with scrypt). Email and phone are stored for future hearing reminders.
+- Every page except `/login` and `/signup` requires sign-in; each lawyer only sees their own cases.
+- **Cases**: title, case type (civil, criminal, family, property, etc.), case number, court, client name and phone, opposing party, status (active / on hold / closed), notes. Search and filter by status; the list shows each case's next hearing.
+- **Hearings**: any number per case, each with a date, optional time, purpose, status (scheduled / held / adjourned / cancelled) and notes/outcome. Add the first hearing while creating the case; past dates are allowed so running and older cases can be recorded.
+- **Calendar**: month view of all hearings across cases, a day panel, a "next 7 days" list, and a print-friendly layout.
+
+## Data model
+
+```
+User (lawyer) 1 --< cases (lawyer_id) 1 --< case_hearings (case_id)
+```
+
+Deleting a user deletes their cases; deleting a case deletes its hearings.
 
 ## Setup
 
@@ -32,6 +35,8 @@ Built with Next.js 15 (App Router), PostgreSQL + Prisma, Auth.js and Tailwind CS
    ```
 
 4. Start the app: `npm run dev`, open http://localhost:3000 and choose **Create an account**.
+
+> Upgrading from the earlier events version: the `20261120090000_cases_and_hearings` migration **drops the old `Event` table**. Existing accounts keep working and sign in with their old email address as the username.
 
 ## Deploying to Vercel
 
@@ -55,5 +60,5 @@ Set the same environment variables on the host. Set `APP_TIMEZONE` explicitly, s
 
 ## Notes
 
-- Events are single-day (a start and end time on one date, or all day).
+- Hearing dates are stored as calendar dates (Postgres `DATE`) with an optional `HH:mm` time in `APP_TIMEZONE`.
 - Sign-up is open to anyone who can reach the site. Add an approval step or invite codes before putting it on the public internet.

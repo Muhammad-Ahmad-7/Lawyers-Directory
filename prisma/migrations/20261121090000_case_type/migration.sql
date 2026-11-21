@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "CaseType" AS ENUM ('CIVIL', 'CRIMINAL', 'FAMILY', 'PROPERTY', 'RENT', 'CORPORATE', 'BANKING', 'LABOUR', 'TAX', 'CONSTITUTIONAL', 'OTHER');
+
+-- AlterTable
+ALTER TABLE "cases" ADD COLUMN     "case_type" "CaseType" NOT NULL DEFAULT 'OTHER';
+
