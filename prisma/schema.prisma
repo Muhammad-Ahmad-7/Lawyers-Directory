@@ -7,47 +7,87 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// A lawyer's account. Sign-in is by username; email and phone are kept for
+/// contact and future reminders (WhatsApp / SMS / email).
 model User {
   id           String   @id @default(cuid())
   name         String
-  email        String   @unique
+  username     String   @unique
+  email        String
+  /// WhatsApp / contact number, digits with an optional leading "+".
+  phone        String
   passwordHash String
   createdAt    DateTime @default(now())
-  events       Event[]
+  cases        Case[]
 }
 
-enum EventType {
-  APPOINTMENT
-  COURT_HEARING
-  CLIENT_MEETING
-  DEADLINE
+enum CaseStatus {
+  ACTIVE
+  ON_HOLD
+  CLOSED
+}
+
+enum CaseType {
+  CIVIL
+  CRIMINAL
+  FAMILY
+  PROPERTY
+  RENT
+  CORPORATE
+  BANKING
+  LABOUR
+  TAX
+  CONSTITUTIONAL
   OTHER
 }
 
-enum EventStatus {
+enum HearingStatus {
   SCHEDULED
-  COMPLETED
+  HELD
   ADJOURNED
   CANCELLED
 }
 
-model Event {
-  id         String      @id @default(cuid())
-  userId     String
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title      String
-  type       EventType   @default(APPOINTMENT)
-  status     EventStatus @default(SCHEDULED)
-  startAt    DateTime
-  endAt      DateTime
-  allDay     Boolean     @default(false)
-  location   String?
-  clientName String?
-  caseNumber String?
-  courtName  String?
-  notes      String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+/// One case handled by a lawyer (User 1 → many Case).
+model Case {
+  id            String        @id @default(cuid())
+  lawyerId      String        @map("lawyer_id")
+  lawyer        User          @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+  title         String
+  caseType      CaseType      @default(OTHER) @map("case_type")
+  caseNumber    String?       @map("case_number")
+  courtName     String?       @map("court_name")
+  clientName    String?       @map("client_name")
+  clientPhone   String?       @map("client_phone")
+  opposingParty String?       @map("opposing_party")
+  status        CaseStatus    @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  hearings      CaseHearing[]
 
-  @@index([userId, startAt])
+  @@index([lawyerId])
+  @@map("cases")
+}
+
+/// One hearing date of a case (Case 1 → many CaseHearing).
+model CaseHearing {
+  id          String        @id @default(cuid())
+  caseId      String        @map("case_id")
+  case        Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  /// Calendar date of the hearing (no timezone).
+  hearingDate DateTime      @map("hearing_date") @db.Date
+  /// Optional time on that date, "HH:mm" in the app timezone.
+  hearingTime String?       @map("hearing_time")
+  /// What the hearing is for, e.g. "Arguments", "Evidence".
+  purpose     String?
+  status      HearingStatus @default(SCHEDULED)
+  /// Notes or the outcome of the hearing.
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([caseId, hearingDate])
+  @@index([hearingDate])
+  @@map("case_hearings")
 }

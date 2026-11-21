@@ -2,7 +2,7 @@ import type { NextAuthConfig } from "next-auth";
 
 /**
  * Edge-safe part of the auth config (used by middleware).
- * The Credentials provider, which needs Prisma and bcrypt, is added in auth.ts.
+ * The Credentials provider, which needs Prisma, is added in auth.ts.
  */
 export const authConfig = {
   pages: { signIn: "/login" },
@@ -15,7 +15,7 @@ export const authConfig = {
       const path = request.nextUrl.pathname;
       const onAuthPage = path.startsWith("/login") || path.startsWith("/signup");
       if (onAuthPage) {
-        if (loggedIn) return Response.redirect(new URL("/schedule", request.nextUrl));
+        if (loggedIn) return Response.redirect(new URL("/calendar", request.nextUrl));
         return true;
       }
       return loggedIn; // false → redirect to /login

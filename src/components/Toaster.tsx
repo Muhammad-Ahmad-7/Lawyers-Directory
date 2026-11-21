@@ -16,11 +16,10 @@ export function useToast(): ToastFn {
 
 const DURATION_MS = 4000;
 
-const STYLES: Record<ToastType, { box: string; icon: React.ReactNode }> = {
+const STYLES: Record<ToastType, { icon: React.ReactNode }> = {
   success: {
-    box: "border-emerald-200 bg-white text-slate-900",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-emerald-600" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-green-600" aria-hidden="true">
         <path
           fillRule="evenodd"
           d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.86-9.86a.75.75 0 0 0-1.22-.88l-3.24 4.5-1.62-1.62a.75.75 0 1 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.09l3.75-5.22Z"
@@ -30,7 +29,6 @@ const STYLES: Record<ToastType, { box: string; icon: React.ReactNode }> = {
     ),
   },
   error: {
-    box: "border-red-200 bg-white text-slate-900",
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-red-600" aria-hidden="true">
         <path
@@ -42,9 +40,8 @@ const STYLES: Record<ToastType, { box: string; icon: React.ReactNode }> = {
     ),
   },
   info: {
-    box: "border-slate-200 bg-white text-slate-900",
     icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-slate-500" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-muted-foreground" aria-hidden="true">
         <path
           fillRule="evenodd"
           d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.25v3.25a.75.75 0 0 0 1.5 0V9.75A.75.75 0 0 0 10 9H9Z"
@@ -71,7 +68,7 @@ function readFlashCookie(): { type: ToastType; message: string } | null {
       }
       return null;
     } catch {
-      // not JSON yet — try decoding again
+      // not JSON yet, so decode again
     }
   }
   return null;
@@ -113,7 +110,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role={t.type === "error" ? "alert" : "status"}
-            className={`toast-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border p-3 shadow-lg ${STYLES[t.type].box}`}
+            className="toast-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-border bg-card p-3 text-foreground shadow-lg"
           >
             <span className="mt-0.5 shrink-0">{STYLES[t.type].icon}</span>
             <p className="flex-1 text-sm">{t.message}</p>
@@ -121,7 +118,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => dismiss(t.id)}
               aria-label="Dismiss notification"
-              className="-m-1 rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="-m-1 rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
                 <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />

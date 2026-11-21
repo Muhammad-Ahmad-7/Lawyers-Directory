@@ -7,7 +7,7 @@ import { prisma } from "./lib/db";
 import { getDummyHash, verifyPassword } from "./lib/password";
 
 const credentialsSchema = z.object({
-  email: z.string().trim().toLowerCase().email(),
+  username: z.string().trim().toLowerCase().min(1),
   password: z.string().min(1),
 });
 
@@ -15,13 +15,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { username: {}, password: {} },
       async authorize(raw) {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
 
-        const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-        // Always run a hash check so an unknown email takes as long as a wrong password.
+        const user = await prisma.user.findUnique({ where: { username: parsed.data.username } });
+        // Always run a hash check so an unknown username takes as long as a wrong password.
         const ok = await verifyPassword(parsed.data.password, user?.passwordHash ?? (await getDummyHash()));
         if (!user || !ok) return null;
 
